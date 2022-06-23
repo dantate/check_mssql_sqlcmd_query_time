@@ -1,5 +1,5 @@
 #!/usr/bin/python3 -O
-# check_mssql_sqlcmd_query
+# check_mssql_sqlcmd_query 0.5.0 internal testing build
 # Daniel Tate 2022 - Initial Release June 2022
 # Uses native mcirosoft sqlcmd client to connect to sql server, execute a query, and get the approx time of execution.
 # You must have the client installed and referenced in the sql_sqlcmd parameter below
@@ -30,10 +30,10 @@ args = parser.parse_args()
 if args.warn > args.crit:
     print("CRITICAL: warning level must be less than critical level")
     exit(2)
-if __debug__:
+if __debug__ or args.debug:
     print("DEBUG: now outside the validate segment")
 
-if __debug__:
+if __debug__ or args.debug:
     print("DEBUG: MAIN: In the main body.")
     print("==Parameters============================")
     print("========================================"\
@@ -52,21 +52,21 @@ if __debug__:
 
 
 sqlcmd_exists = exists(sql_sqlcmd)
-if __debug__: print("DEBUG: MAIN: SQL Exists? ", sqlcmd_exists)
+if __debug__ or args.debug: print("DEBUG: MAIN: SQL Exists? ", sqlcmd_exists)
 if (sqlcmd_exists != True):
     print("CRITICAL: sqlcmd not found! check -s parameter. current:", sql_sqlcmd, "-- Now exiting.")
     exit(1)
 
 sqlquery_exists = exists(args.querypath)
-if __debug__: print("DEBUG: MAIN: Query exists? ", sqlquery_exists)
+if __debug__ or args.debug: print("DEBUG: MAIN: Query exists? ", sqlquery_exists)
 if (sqlquery_exists != True):
     print("CRITICAL: sql query not fund! check -q parameter. current: ", args.querypath, "--- Now exiting.")
     exit(1)
 
 
-tic = perf_counter()
+tick = perf_counter()
 
-if __debug__:
+if __debug__ or args.debug:
     print("DEBUG: MAIN: Running query")
 sql = subprocess.call(
     [
@@ -85,11 +85,13 @@ if (sql == 1):
 else:
 
 # Time Calculation
-    toc = perf_counter()
+    tock = perf_counter()
 
-    clock = toc - tic
-    if __debug__:
-        print("DEBUG: MAIN: clock is", clock)
+    if __debug__ or args.debug: print(f"DEBUG: FINAL: tick: {tick} \nDEBUG: FINAL: tock: {tock}" )
+
+    clock = tock - tick
+    if __debug__ or args.debug:
+        print("DEBUG: FINAL: clock: ", clock)
 
     if clock > args.crit:
         print("CRITICAL: SQL Query Response Time:", clock, "|response_time=%f" % (clock))
