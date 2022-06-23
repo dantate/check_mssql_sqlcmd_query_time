@@ -1,7 +1,6 @@
 #!/usr/bin/python3 -O
 import argparse
 import subprocess
-#import time
 from os.path import exists
 from time import perf_counter
 
