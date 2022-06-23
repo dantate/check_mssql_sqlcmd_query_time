@@ -1,4 +1,11 @@
 #!/usr/bin/python3 -O
+# check_mssql_sqlcmd_query
+# Daniel Tate 2022 - Initial Release June 2022
+# Uses native mcirosoft sqlcmd client to connect to sql server, execute a query, and get the approx time of execution.
+# You must have the client installed and referenced in the sql_sqlcmd parameter below
+# As of June 2022 the client is available at https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools
+
+
 import argparse
 import subprocess
 from os.path import exists
@@ -9,15 +16,15 @@ sql_sqlcmd: str = "/opt/mssql-tools/bin/sqlcmd"
 if __debug__:
     print("DEBUG: debug is", __debug__)
 
-parser = argparse.ArgumentParser(description="Collect variables")
-parser.add_argument('-w','--warn', type=float, help="Warning Threshold", required=True)
-parser.add_argument('-c','--crit', type=float, help="Critical Threshold", required=True)
+parser = argparse.ArgumentParser(description="warn/crit time can be in 0 or 0.00 format, i.e -w 1.32 -c 60")
+parser.add_argument('-H','--hostname', type=str, help="IP Address/Hostname",metavar='1.2.3.4',required=True)
 parser.add_argument('-d','--debug', help="Debug mode", action='store_true', required=False)
-parser.add_argument('-H','--hostname', type=str, help="IP Address/Hostname",required=True)
-parser.add_argument('-u','--username', type=str, help="username", required=True)
-parser.add_argument('-p','--password', type=str, help="Password", required=True)
-parser.add_argument('-q','--querypath',type=str,help='path to query file', required=True)
-
+parser.add_argument('-w','--warn', type=float,help="Warning Threshold",metavar='warn', required=True)
+parser.add_argument('-c','--crit', type=float, help="Critical Threshold",metavar='crit', required=True)
+parser.add_argument('-u','--username', type=str, help="SQL Username",metavar='username', required=True)
+parser.add_argument('-p','--password', type=str, help="SQL Password",metavar='pass', required=True)
+parser.add_argument('-q','--querypath',type=str,help='path to query file',metavar='path', required=True)
+metavar='\b',
 args = parser.parse_args()
 
 if args.warn > args.crit:
