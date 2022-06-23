@@ -8,19 +8,24 @@ import psutil
 import sys
 import subprocess
 import time
+from os.path import exists
 
-log_location = "/var/lib/portsentry"
-SQLCMD: str = "/opt/mssql-tools/bin/sqlcmd"
+sql_sqlcmd: str = "/opt/mssql-tools/bin/sqlcmd"
 
 if __debug__:
     print("DEBUG: debug is", __debug__)
-usage = "usage: ./check_sqlcmd -w|--warn=num -c|--crit=num -i|--ip=ServerIP -q|--query=queryfile.sql -P|--Pathx sqlcmd_path [defaults to /opt/mssql-tools/bin/mssql] -u|--user=username -p|--password=yourPassword"
+usage = "usage: ./check_sqlcmd -w|--warn=num -c|--crit=num -i|--ip=ServerIP -q|--query=queryfile.sql -s|--sqlcmd\n"\
+        "sqlcmd_path [defaults to /opt/mssql-tools/bin/mssql] -u|--user=username -p|--password=yourPassword\n"\
+        "ex: ./check_sqlcmd -w 10 -c 20 -i 172.168.12.14 -q /usr/lib/nagios/plugins/perfquery.sql\n"\
+        "-u mssqluser -p msssqlpass\n"\
+        "All parameters, except -s, are required.\n"
+
 
 def command_line_validate(argv):
 
     try:
         opts, args = getopt.getopt(
-                argv, "w:c:i::u::p::q::o:", ["warn=", "crit=", "ip=", "user","password","query"])
+                argv, "w:c:i::u::p::q::o:", ["warn=", "crit=", "ip=", "user","password","query","sqlcmd"])
     except getopt.GetoptError:
         #print(usage)
         pass
@@ -57,7 +62,7 @@ def command_line_validate(argv):
                 try:
                     sql_user = arg
                     if __debug__:
-                        print("DEBUG: USER: user try got: ", sql_user, "arg: ", arg)
+                        print("DEBUG: USER: try got: ", sql_user, "arg: ", arg)
                 except:
                     print("Username must be string")
                     if __debug__:    print( "DEBUG: USER: EXCEPT: recieved:", sql_user, "you are in the except clause predebug",)
@@ -68,7 +73,7 @@ def command_line_validate(argv):
                 try:
                     sql_password = arg
                     if __debug__:
-                        print("DEBUG: PASSWORD: user try got: ", sql_password, "arg: ", arg)
+                        print("DEBUG: PASSWORD: try got: ", sql_password, "arg: ", arg)
                 except:
                     print("Password must be string")
                     if __debug__:    print( "DEBUG: PASSWORD: EXCEPT: recieved:", sql_password, "you are in the except clause predebug",)
@@ -79,61 +84,74 @@ def command_line_validate(argv):
                 try:
                     sql_querypath = arg
                     if __debug__:
-                        print("DEBUG: QUERYPATH: user try got: ", sql_querypath, "arg: ", arg)
+                        print("DEBUG: QUERYPATH: try got: ", sql_querypath, "arg: ", arg)
                 except:
                     print("Query path must be string")
                     if __debug__:    print( "DEBUG: QUERYPATH: EXCEPT: recieved:", sql_querypath, "you are in the except clause predebug",)
                     exit(2)
-
-
 
         # Switches null validation
 
             else:
                 print(usage)
                 exit(2)
-                #pass
         try:
             isinstance(warn, int)
             # print('warn level:', warn
         except:
-            print("warn level is required")
+            print("CRITICAL: warn level is required")
             #print(usage)
             exit(2)
         try:
             isinstance(crit, int)
         except:
-            print("crit level is required")
+            print("CRITICAL: crit level is required")
         try:
             isinstance(warn, int)
-            # print('warn level:', warn
         except:
-            print("warn level is required")
-            #print(usage)
+            print("CRITICAL: warn level is required")
             exit(2)
         try:
             isinstance(crit, int)
         except:
-            print("crit level is required")
-            #print(usage)
+            print("CRITICAL: crit level is required")
+            exit(2)
+        try:
+            isinstance(sql_ip, str)
+        except:
+            print("CRITICAL: sql_ip required")
+            exit(2)
+        try:
+            isinstance(sql_querypath, str)
+        except:
+            print("CRITICAL: sql_querypath required")
+            exit(2)
+        try:
+            isinstance(sql_user, str)
+        except:
+            print("CRITICAL: sql_user required")
+            exit(2)
+        try:
+            isinstance(sql_password, str)
+        except:
+            print("CRITICAL: sql_password required")
             exit(2)
     except:
         exit(2)
     # confirm that warning level is less than 2 level, alert and exit if check fails
     if warn > crit:
-        print("warning level must be less than critical level***")
+        print("CRITICAL: warning level must be less than critical level")
         exit(2)
-    return warn, crit, sql_ip, sql_user, sql_password, sql_querypath
-
+    return warn, crit, sql_ip, sql_user, sql_password, sql_querypath, sql_sqlcmd
 
 if __debug__:
     print("DEBUG: now outside the validate segment")
 
 # def main():
 argv = sys.argv[1:]
-if __debug__: print("DEBUG: MAIN: now past sys.argv[1:]", sys.argv[1:])
+if __debug__: print("DEBUG: MAIN: now sys.argv[1:]", sys.argv[1:])
 
-warn, crit, sql_ip, sql_user, sql_password, sql_querypath  = command_line_validate(argv)
+warn, crit, sql_ip, sql_user, sql_password, sql_querypath, sql_sqlcmd  = command_line_validate(argv)
 
 if __debug__:
     print("DEBUG: In the main body. Debug ON")
@@ -144,23 +162,35 @@ if __debug__:
             "\nDEBUG: SQLIp:", sql_ip,
             "\nDEBUG: SQLUser:", sql_user,
             "\nDEBUG: SQLPass:", sql_password,
-            "\nDEBUG: SQLQuery:", sql_querypath\
-            "\n========================================\
+            "\nDEBUG: SQLQuery:", sql_querypath,
+            "\nDEBUG: SQLPath:", sql_sqlcmd,
+            "\n========================================"
+
             )
+######################################### MAIN #############################################
 
-# if __name__ == '__main__':
-# main()
 
-# def main():
+sqlcmd_exists = exists(sql_sqlcmd)
+if __debug__: print("DEBUG: MAIN: SQL Exists? ", sqlcmd_exists)
+if (sqlcmd_exists != True):
+    print("CRITICAL: sqlcmd not found! check -s parameter. current:", sql_sqlcmd, "-- Now exiting.")
+    exit(1)
+
+sqlquery_exists = exists(sql_querypath)
+if __debug__: print("DEBUG: MAIN: Query exists? ", sqlquery_exists)
+if (sqlquery_exists != True):
+    printf("CRITICAL: sql query not fund! check -q parameter. current: ", sql_querypath, "--- Now exiting.")
+    exit(1)
+
 
 tic = time.perf_counter()
 
 # Prototype Query
-# subprocess.call(["/opt/mssql-tools/bin/sqlcmd","-S 45.58.43.142","-U",sql_user, "-P","Nothingsoloudashearingwhenwelie", "-q", "exit(SELECT @@VERSION;)"], \
+# subprocess.call(["/opt/mssql-tools/bin/sqlcmd","-S 45.58.43.142","-U",sql_user, "-P","password", "-q", "exit(SELECT @@VERSION;)"], \
 # )
 # Short Query
 if __debug__:
-    print("DEBUG: Running short query")
+    print("DEBUG: MAIN: Running query")
 sql = subprocess.call(
     [
         "/opt/mssql-tools/bin/sqlcmd",
