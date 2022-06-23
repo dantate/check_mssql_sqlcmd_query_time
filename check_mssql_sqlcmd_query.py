@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -O
 
 # Model Command: sqlcmd -S 45.58.43.142 -U sql_user -P "PW" -i sgmetric_query.sql
 
@@ -14,21 +14,27 @@ sql_sqlcmd: str = "/opt/mssql-tools/bin/sqlcmd"
 
 if __debug__:
     print("DEBUG: debug is", __debug__)
-usage = "usage: ./check_sqlcmd -w|--warn=num -c|--crit=num -i|--ip=ServerIP -q|--query=queryfile.sql -s|--sqlcmd\n"\
-        "sqlcmd_path [defaults to /opt/mssql-tools/bin/mssql] -u|--user=username -p|--password=yourPassword\n"\
+usage = "sqlcmd_path defaults to /opt/mssql-tools/bin/mssql.  Edit parameter in script to change.\n\n" \
+        "usage: ./check_sqlcmd\n" \
+        "-w|--warn=num\t\t\t\t" \
+        "-c|--crit=num\t\t " \
+        "-i|--ip=ServerIP\n" \
+        "-q|--query=queryfile.sql\t  "\
+        "\t-u|--user=username\t " \
+        "-p|--password=yourPassword\n\n"\
         "ex: ./check_sqlcmd -w 10 -c 20 -i 172.168.12.14 -q /usr/lib/nagios/plugins/perfquery.sql\n"\
-        "-u mssqluser -p msssqlpass\n"\
-        "All parameters, except -s, are required.\n"
+        "-u myuser  -p msssqlpass\n\n"\
+        "All parameters are required.\n"
 
 
 def command_line_validate(argv):
 
     try:
         opts, args = getopt.getopt(
-                argv, "w:c:i::u::p::q::o:", ["warn=", "crit=", "ip=", "user","password","query","sqlcmd"])
+                argv, "w:c:i::u::p::q::h::", ["warn=", "crit=", "ip=", "user","password","query","sqlcmd","help"])
     except getopt.GetoptError:
-        #print(usage)
-        pass
+        print(usage)
+        exit(1)
     try:
         for opt, arg in opts:
             if opt in ("-w", "--warn"):
@@ -90,6 +96,12 @@ def command_line_validate(argv):
                     if __debug__:    print( "DEBUG: QUERYPATH: EXCEPT: recieved:", sql_querypath, "you are in the except clause predebug",)
                     exit(2)
 
+            # print usage on help/?
+            elif opt in ("-h", "--help"):
+                    if __debug__: print ("DEBUG: USAGE: In usage block")
+                    print(usage)
+                    exit(2)
+            #
         # Switches null validation
 
             else:
@@ -138,7 +150,7 @@ def command_line_validate(argv):
             exit(2)
     except:
         exit(2)
-    # confirm that warning level is less than 2 level, alert and exit if check fails
+    # confirm that warning level is less than critical level, alert and exit if check fails
     if warn > crit:
         print("CRITICAL: warning level must be less than critical level")
         exit(2)
@@ -154,9 +166,10 @@ if __debug__: print("DEBUG: MAIN: now sys.argv[1:]", sys.argv[1:])
 warn, crit, sql_ip, sql_user, sql_password, sql_querypath, sql_sqlcmd  = command_line_validate(argv)
 
 if __debug__:
-    print("DEBUG: In the main body. Debug ON")
-    print("========================================\
-            \nDEBUG: MAIN: args: ",
+    print("DEBUG: In the main body.")
+    print("==Parameters============================")
+    print("========================================"\
+            "\nDEBUG: MAIN: args: ",
             "\nDEBUG: Warn: ", warn,
             "\nDEBUG: Crit: ", crit,
             "\nDEBUG: SQLIp:", sql_ip,
@@ -198,11 +211,14 @@ sql = subprocess.call(
         "-U",sql_user,
         "-P",sql_password,
         "-i",sql_querypath
-    ]
+    ],
+    stdout=subprocess.DEVNULL,
+    stderr=subprocess.DEVNULL
 )
 if (sql == 1):
     print("CRITICAL: Return code from subcommand:",sql)
     exit(sql)
+else:
 
 # Time Calculation
     toc = time.perf_counter()
@@ -210,7 +226,6 @@ if (sql == 1):
     tock = toc - tic
     if __debug__:
         print("DEBUG: tock is", tock)
-        print("DEBUG: sql_ip is", sql_ip)
 
     if tock > crit:
         print("CRITICAL: SQL Query Response Time:", tock, "|response_time=%f" % (tock))
