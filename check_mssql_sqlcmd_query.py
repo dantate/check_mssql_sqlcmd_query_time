@@ -1,7 +1,5 @@
 #!/usr/bin/python3 -O
 
-# Model Command: sqlcmd -S 45.58.43.142 -U sql_user -P "PW" -i sgmetric_query.sql
-
 import os
 import getopt
 import psutil
@@ -31,7 +29,7 @@ def command_line_validate(argv):
 
     try:
         opts, args = getopt.getopt(
-                argv, "w:c:i::u::p::q::h::", ["warn=", "crit=", "ip=", "user","password","query","sqlcmd","help"])
+                argv, "w:c:i::u::p::q::h::", ["warn", "crit", "ip", "host", "user","password","query","sqlcmd","help"])
     except getopt.GetoptError:
         print(usage)
         exit(1)
@@ -192,7 +190,7 @@ if (sqlcmd_exists != True):
 sqlquery_exists = exists(sql_querypath)
 if __debug__: print("DEBUG: MAIN: Query exists? ", sqlquery_exists)
 if (sqlquery_exists != True):
-    printf("CRITICAL: sql query not fund! check -q parameter. current: ", sql_querypath, "--- Now exiting.")
+    print("CRITICAL: sql query not fund! check -q parameter. current: ", sql_querypath, "--- Now exiting.")
     exit(1)
 
 
@@ -223,17 +221,17 @@ else:
 # Time Calculation
     toc = time.perf_counter()
 
-    tock = toc - tic
+    clock = toc - tic
     if __debug__:
-        print("DEBUG: tock is", tock)
+        print("DEBUG: clock is", clock)
 
-    if tock > crit:
-        print("CRITICAL: SQL Query Response Time:", tock, "|response_time=%f" % (tock))
+    if clock > crit:
+        print("CRITICAL: SQL Query Response Time:", clock, "|response_time=%f" % (clock))
         exit(2)
 
-    elif tock > warn:
-        print("WARN: SQL Query Response Time:", tock, "|response_time=%f" % (tock))
+    elif clock > warn:
+        print("WARN: SQL Query Response Time:", clock, "|response_time=%f" % (clock))
         exit(1)
     else:
-        print("OK: SQL Query Response Time;", tock, "|response_time=%f" % (tock))
+        print("OK: SQL Query Response Time;", clock, "|response_time=%f" % (clock))
         exit(0)
