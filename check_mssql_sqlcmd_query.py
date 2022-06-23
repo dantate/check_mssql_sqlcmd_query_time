@@ -1,5 +1,5 @@
 #!/usr/bin/python3 -O
-# check_mssql_sqlcmd_query 0.5.0 internal testing build
+# check_mssql_sqlcmd_query 0.5.1 internal testing build
 # Daniel Tate 2022 - Initial Release June 2022
 # Uses native mcirosoft sqlcmd client to connect to sql server, execute a query, and get the approx time of execution.
 # You must have the client installed and referenced in the sql_sqlcmd parameter below
