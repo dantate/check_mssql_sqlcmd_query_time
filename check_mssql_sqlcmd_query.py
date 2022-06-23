@@ -14,13 +14,13 @@ if __debug__:
     print("DEBUG: debug is", __debug__)
 usage = "sqlcmd_path defaults to /opt/mssql-tools/bin/mssql.  Edit parameter in script to change.\n\n" \
         "usage: ./check_sqlcmd\n" \
-        "-w|--warn=num\t\t\t\t" \
-        "-c|--crit=num\t\t " \
-        "-i|--ip=ServerIP\n" \
-        "-q|--query=queryfile.sql\t  "\
-        "\t-u|--user=username\t " \
-        "-p|--password=yourPassword\n\n"\
-        "ex: ./check_sqlcmd -w 10 -c 20 -i 172.168.12.14 -q /usr/lib/nagios/plugins/perfquery.sql\n"\
+        "-w|--warn num\t\t\t\t" \
+        "-c|--crit num\t\t " \
+        "-H|--hostname\n" \
+        "-q|--query /path/queryfile.sql\t  "\
+        "\t-u|--user username\t " \
+        "-p|--password yourPassword\n\n"\
+        "ex: ./check_sqlcmd -H 172.168.12.14 -w 10 -c 20 -q /usr/lib/nagios/plugins/perfquery.sql\n"\
         "-u myuser  -p msssqlpass\n\n"\
         "All parameters are required.\n"
 
@@ -28,8 +28,11 @@ usage = "sqlcmd_path defaults to /opt/mssql-tools/bin/mssql.  Edit parameter in 
 def command_line_validate(argv):
 
     try:
+        if __debug__: print("DEBUG: CLV: argv is",argv)
         opts, args = getopt.getopt(
-                argv, "w:c:i::u::p::q::h::", ["warn", "crit", "ip", "host", "user","password","query","sqlcmd","help"])
+                argv, "w:c:i::H::u::p::q::h::",
+                ['warn=', 'crit=', 'ip', 'hostname=', 'user=','password=','query=','sqlcmd=','help'])
+        if __debug__: print("opts:", opts,"\nargs:",args)
     except getopt.GetoptError:
         print(usage)
         exit(1)
@@ -37,19 +40,29 @@ def command_line_validate(argv):
         for opt, arg in opts:
             if opt in ("-w", "--warn"):
                 try:
-                    warn = int(arg)
+                    try:
+                        warn = int(arg)
+                        if __debug__: print("DEBUG: VALIDATE: warn int: ", warn)
+                    except:
+                        warn = float(arg)
+                        if __debug__: print("DEBUG: VALIDATE: warn FLOAT: ", warn)
                 except:
                     print("Warn value must be an int")
                     exit(2)
             elif opt in ("-c", "--crit"):
                 try:
-                    crit = int(arg)
+                    try:
+                        crit = int(arg)
+                        if __debug__: print("DEBUG: VALIDATE: crit int: ", crit)
+                    except:
+                        crit = float(arg)
+                        if __debug__: print("DEBUG: VALIDATE: crit FLOAT: ", crit)
                 except:
                     print("crit value must be an int")
                     exit(2)
 
             # Evaluate IP
-            elif opt in ("-i", "--ip"):
+            elif opt in ("-i", "--ip", "-H", "--hostname"):
                 try:
                     sql_ip = arg
                     if __debug__:
@@ -107,13 +120,14 @@ def command_line_validate(argv):
                 exit(2)
         try:
             isinstance(warn, int)
-            # print('warn level:', warn
+            if __debug__: print('DEBUG: VALIDATE: inner warn level:', warn)
         except:
-            print("CRITICAL: warn level is required")
-            #print(usage)
+            print("CRITICAL: warn level is required", warn)
+            print(usage)
             exit(2)
         try:
             isinstance(crit, int)
+            if __debug__: print("DEBUG: VALIDATE: inner crit level: ", crit)
         except:
             print("CRITICAL: crit level is required")
         try:
@@ -152,11 +166,11 @@ def command_line_validate(argv):
     if warn > crit:
         print("CRITICAL: warning level must be less than critical level")
         exit(2)
+    if __debug__:
+        print("DEBUG: now outside the validate segment")
     return warn, crit, sql_ip, sql_user, sql_password, sql_querypath, sql_sqlcmd
 
-if __debug__:
-    print("DEBUG: now outside the validate segment")
-
+if __debug__: print("DEBUG: MAIN: now in MAIN")
 # def main():
 argv = sys.argv[1:]
 if __debug__: print("DEBUG: MAIN: now sys.argv[1:]", sys.argv[1:])
@@ -164,7 +178,7 @@ if __debug__: print("DEBUG: MAIN: now sys.argv[1:]", sys.argv[1:])
 warn, crit, sql_ip, sql_user, sql_password, sql_querypath, sql_sqlcmd  = command_line_validate(argv)
 
 if __debug__:
-    print("DEBUG: In the main body.")
+    print("DEBUG: MAIN: In the main body.")
     print("==Parameters============================")
     print("========================================"\
             "\nDEBUG: MAIN: args: ",
@@ -223,7 +237,7 @@ else:
 
     clock = toc - tic
     if __debug__:
-        print("DEBUG: clock is", clock)
+        print("DEBUG: MAIN: clock is", clock)
 
     if clock > crit:
         print("CRITICAL: SQL Query Response Time:", clock, "|response_time=%f" % (clock))
