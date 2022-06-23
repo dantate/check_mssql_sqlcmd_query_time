@@ -11,7 +11,7 @@ import subprocess
 from os.path import exists
 from time import perf_counter
 
-sql_sqlcmd: str = "/opt/mssql-tools/bin/sqlcmd"
+sql_sqlcmd = "/opt/mssql-tools/bin/sqlcmd"
 
 if __debug__:
     print("DEBUG: debug is", __debug__)
