@@ -1,12 +1,9 @@
-#!/usr/bin/python3
+#!/usr/bin/python3 -O
 import argparse
-import os
-import getopt
-import psutil
-import sys
 import subprocess
-import time
+#import time
 from os.path import exists
+from time import perf_counter
 
 sql_sqlcmd: str = "/opt/mssql-tools/bin/sqlcmd"
 
@@ -61,7 +58,7 @@ if (sqlquery_exists != True):
     exit(1)
 
 
-tic = time.perf_counter()
+tic = perf_counter()
 
 if __debug__:
     print("DEBUG: MAIN: Running query")
@@ -82,7 +79,7 @@ if (sql == 1):
 else:
 
 # Time Calculation
-    toc = time.perf_counter()
+    toc = perf_counter()
 
     clock = toc - tic
     if __debug__:
