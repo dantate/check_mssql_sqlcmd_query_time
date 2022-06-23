@@ -17,8 +17,8 @@ if __debug__:
     print("DEBUG: debug is", __debug__)
 
 parser = argparse.ArgumentParser(description="warn/crit time can be in 0 or 0.00 format, i.e -w 1.32 -c 60")
-parser.add_argument('-H','--hostname', type=str, help="IP Address/Hostname",metavar='1.2.3.4',required=True)
 parser.add_argument('-d','--debug', help="Debug mode", action='store_true', required=False)
+parser.add_argument('-H','--hostname', type=str, help="IP Address/Hostname",metavar='1.2.3.4',required=True)
 parser.add_argument('-w','--warn', type=float,help="Warning Threshold",metavar='warn', required=True)
 parser.add_argument('-c','--crit', type=float, help="Critical Threshold",metavar='crit', required=True)
 parser.add_argument('-u','--username', type=str, help="SQL Username",metavar='username', required=True)
